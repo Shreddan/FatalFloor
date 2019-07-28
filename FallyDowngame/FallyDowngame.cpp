@@ -53,7 +53,9 @@ public:
 
 	bool endfin = false;
 
-	int cloudtimer;
+	float cloudtimer = 0.f;
+	float cloudrate = 4.f;
+	float cloudspeed = 2.2f;
 
 	int defAltitude = 200;
 	int altitude = defAltitude;
@@ -80,7 +82,7 @@ public:
 
 	const int tOffset = 20;
 
-
+	
 
 	bool Complete = false;
 
@@ -115,7 +117,7 @@ public:
 		gState = Game;
 	}
 
-	void nextLvl(int& altitude, int& defAltitude, float& fFrameTime, float& timeSpace, int& nFrame, float& posX, float& posY, int& endloopcount, int& Hearts, float& px, float& py, int& level, int& gState, bool& endfin, bool& Complete, float& velX)
+	void nextLvl(int& altitude, int& defAltitude, float& fFrameTime, float& timeSpace, int& nFrame, float& posX, float& posY, int& endloopcount, int& Hearts, float& px, float& py, int& level, int& gState, bool& endfin, bool& Complete, float& velX, float& cloudspeed, float& cloudrate)
 	{
 		Complete = false;
 		endfin = false;
@@ -142,6 +144,8 @@ public:
 
 		level++;
 
+		cloudspeed += 0.2f;
+		cloudrate -= 0.2f;
 		
 		Addcloud(rand() % width, height + 35);
 
@@ -183,24 +187,27 @@ public:
 		c.cY = y;
 		clouds.emplace_back(c);
 	}
-	void Movecloud(std::vector<Clouds>& cloud, int& cloudtimer, int altitude)
+	void Movecloud(std::vector<Clouds>& cloud, float& cloudtimer, int altitude, float cloudrate, float cloudspeed)
 	{
 		for (int i = 0; i < cloud.size(); i++)
 		{
+			
 			if (cloud[i].cY < 0 - (cloudspr->height + 40))
 			{
 				cloud[i].cX = rand() % width - cloudspr->width / 2;
-				cloud[i].cY = height + rand()% cloudspr->height + 40;
+				cloud[i].cY = height + rand() % cloudspr->height + 40;
 				cloud[i].onScreen = false;
 				cloud[i].doesDamage = true;
-				
+				cloudtimer = 0;
+
 			}
 			else
 			{
 				cloud[i].onScreen = true;
-				cloud[i].cY -= 3.f;
+				cloud[i].cY -= cloudspeed; 
 			}
-
+			
+			
 
 		}
 	}
@@ -400,7 +407,7 @@ public:
 	}
 
 	//Sky Stuff
-	void skyChange(int& altitude, float& timeSpace, float fElapsedTime, float& py)
+	void skyChange(int& altitude, float& timeSpace, float fElapsedTime, float& py, float& cloudtimer)
 	{
 		
 		if (altitude > 0)
@@ -412,6 +419,7 @@ public:
 			{
 				altitude--;
 				timeSpace = 0;
+				cloudtimer++;
 			}
 			
 		}
@@ -488,14 +496,14 @@ public:
 			{
 				if (Hearts > 0)
 				{
-					skyChange(altitude, timeSpace, fElapsedTime, py);
+					skyChange(altitude, timeSpace, fElapsedTime, py, cloudtimer);
 					Drawpart(particles);
 					Movepart(particles, height);
-					if (altitude > 20)
+					if (altitude > 20 && cloudtimer >= cloudrate)
 					{
 						SetPixelMode(olc::Pixel::ALPHA);
 						Drawcloud(clouds, cloudspr);
-						Movecloud(clouds, cloudtimer, altitude);
+						Movecloud(clouds, cloudtimer, altitude, cloudrate, cloudspeed);
 						SetPixelMode(olc::Pixel::NORMAL);
 					}
 					SetPixelMode(olc::Pixel::ALPHA);
@@ -523,7 +531,7 @@ public:
 						{
 							if (GetMouse(0).bPressed)
 							{
-								nextLvl(altitude, defAltitude, fFrameTime, timeSpace, nFrame, posX, posY, endloopcount, Hearts, px, py, level, gState, endfin, Complete, velX);
+								nextLvl(altitude, defAltitude, fFrameTime, timeSpace, nFrame, posX, posY, endloopcount, Hearts, px, py, level, gState, endfin, Complete, velX, cloudspeed, cloudrate);
 							}
 
 						}
